@@ -1,0 +1,21 @@
+#staff-class-management-area {
+  table {
+    thead {
+      tr {
+        th {
+          background-color: #9bb448 !important;
+        }
+        .selection-button {
+          background-color: #9bb448 !important;
+        }
+      }
+    }
+  }
+  .staff-create-class-button {
+    background-color: #9bb448 !important;
+  }
+  .staff-view-more-class-button {
+    color: #9bb448;
+    background-color: #9bac623d;
+  }
+}

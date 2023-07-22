@@ -1,0 +1,125 @@
+#admin-course-management-area {
+  background-color: #fff;
+  .staff-course-view {
+    table {
+      thead {
+        .selection-button {
+          background-color: #efd243;
+          border: none;
+          color: #000;
+          cursor: pointer;
+        }
+        .symbol-sorting {
+          color: #00000070;
+        }
+        tr {
+          th {
+            background-color: #efd243;
+            color: #000 !important;
+          }
+        }
+      }
+      .staff-course-view-all-class {
+        background-color: #efd243 !important;
+      }
+    }
+    .view-staff-course-more {
+      background-color: #efd243bd;
+      color: #000;
+    }
+  }
+  .main--content {
+    thead {
+      .selection-button {
+        background-color: #333333;
+        border: none;
+        color: #ffffff90;
+        cursor: pointer;
+      }
+      .symbol-sorting {
+        color: #ffffff70;
+      }
+    }
+    .admin-course-list {
+      background-color: #00000050;
+      color: #000;
+      transform: none;
+      z-index: 1;
+    }
+    .admin-course-list-active {
+      background-color: #333333;
+      color: #fff;
+      // transform: scale(1.1);
+      z-index: 10 !important;
+    }
+    table {
+      position: relative;
+      font-size: 13px;
+
+      .table-head {
+        tr,
+        th {
+          position: sticky;
+          top: 0;
+        }
+      }
+      tbody {
+        .row-bg-1 {
+          background-color: #33333315;
+          &:hover {
+            background-color: #33333320 !important;
+          }
+        }
+        .row-bg-0 {
+          &:hover {
+            background-color: #33333320 !important;
+          }
+        }
+        button {
+          &:hover {
+            transform: scale(1.1);
+            font-weight: 600;
+          }
+        }
+      }
+      tbody td:hover:before {
+        display: none !important;
+        z-index: -100;
+      }
+    }
+  }
+}
+#admin-course-management-area {
+  input {
+    overflow-y: auto;
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+  }
+  .preview-item {
+    label,
+    label::after,
+    .preview-item-content {
+      color: rgb(0, 145, 255);
+    }
+  }
+}
+.course-detail-come-back {
+  &:hover {
+    span,
+    i {
+      color: #e36ac8;
+    }
+  }
+}
+.row-bg-1 {
+  background-color: #33333315;
+  &:hover {
+    background-color: #33333315 !important;
+  }
+}
+.row-bg-0 {
+  &:hover {
+    background-color: #fff !important;
+  }
+}

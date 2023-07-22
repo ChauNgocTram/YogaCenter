@@ -1,0 +1,12 @@
+.hero-wrap-banner {
+  background-image: url(../../assets/images/banner-1.jpg) !important;
+  background-size: cover;
+  height: 750px;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-attachment: fixed;
+  width: 100% !important;
+  .banner-container {
+    flex-direction: column;
+  }
+}

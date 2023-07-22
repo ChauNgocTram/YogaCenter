@@ -1,0 +1,19 @@
+.staff-booking-navigation {
+  .staff-booking-navigation-item-normal {
+    padding-top: 5px !important;
+    border-top-left-radius: 60px;
+    border-top-right-radius: 60px;
+  }
+  .staff-booking-navigation-item {
+    transform: scaleX(1.05);
+    font-weight: bold;
+    // padding-bottom: 2px;
+  }
+}
+.staff-booking-area {
+  table {
+    th {
+      border: 2px solid #333333;
+    }
+  }
+}
