@@ -6,10 +6,12 @@ import { api } from "../../../constants/api";
 import AdminCourseClasses from "./AdminCourseClasses/AdminCourseClasses";
 import AdminCourseFeedback from "./AdminCourseFeedback/AdminCourseFeedback";
 import Swal from "sweetalert2";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import moment from "moment/moment";
 import { Rating, Stack } from "@mui/material";
 import { alert } from "../../../component/AlertComponent/Alert";
+import { menuAction } from "../../../component/Admin/MenuAdmin/MenuAction";
+import LoadingOverlay from "../../../component/Loading/LoadingOverlay";
 
 export default function CourseManagement() {
   localStorage.setItem("MENU_ACTIVE", "/admin/courseManagement");
@@ -26,9 +28,8 @@ export default function CourseManagement() {
   const [sortedClasses, setSortedClasses] = useState("Unsort");
   const [sortedRating, setSortedRating] = useState("Unsort");
   const [priority, setPriority] = useState("");
-  const [renderCount, setRenderCount] = useState(0);
-  const [renderCount2, setRenderCount2] = useState(0);
   const [viewData, setViewData] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const formatPrice = (price) => {
     return Intl.NumberFormat("vi-VN", {
@@ -64,11 +65,13 @@ export default function CourseManagement() {
       .get("/Course/GetAllCourseForAdmin")
       .then((res) => {
         courseListEnd = res.data.sort((a, b) => a.courseID - b.courseID);
-        let countNum = 0;
+        setRenderCourseList(courseListEnd);
+        setCourseList(courseListEnd);
+        setViewData(true);
+        setLoading(false);
         courseListEnd.forEach(async (course) => {
-          countNum++;
-          await api
-            .get("/Class/GetClassByCourseIDForAdmin", {
+          api
+            .get("/Class/GetUnfinisedClassByCourseIDForAdmin", {
               params: { courseid: course.courseID },
             })
             .then((res) => {
@@ -98,15 +101,8 @@ export default function CourseManagement() {
               course.classInfoFinished = [];
             })
             .finally(() => {});
-          if (countNum == courseListEnd.length) {
-            setRenderCount((pre) => pre + 1);
-          }
         });
-
-        let countNum2 = 0;
         courseListEnd.forEach(async (course) => {
-          countNum2++;
-
           await api
             .get("/Feedback/GetCourseFeedbackbyIdForStaff", {
               params: { courseid: course.courseID },
@@ -132,10 +128,6 @@ export default function CourseManagement() {
               course.rating = 0;
             })
             .finally(() => {});
-
-          if (countNum2 == courseListEnd.length) {
-            setRenderCount2((pre) => pre + 1);
-          }
         });
       })
       .catch((err) => {})
@@ -147,19 +139,6 @@ export default function CourseManagement() {
 
   useEffect(() => {
     renderCourseForAdmin();
-    let timerInterval;
-    Swal.fire({
-      title: "Loading...",
-      timer: 1500,
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
-      willClose: () => {
-        clearInterval(timerInterval);
-        setViewData(true);
-      },
-    });
   }, []);
 
   const resetSort = () => {
@@ -304,36 +283,12 @@ export default function CourseManagement() {
     switch (sortedClasses) {
       case "ASC":
         setRenderCourseList(
-          [...renderCourseList].sort(
-            (a, b) =>
-              a.classInfo.filter((item) => {
-                return (
-                  moment(new Date(`${item.endDate}`)) >= moment(new Date())
-                );
-              }).length -
-              b.classInfo.filter((item) => {
-                return (
-                  moment(new Date(`${item.endDate}`)) >= moment(new Date())
-                );
-              }).length
-          )
+          [...renderCourseList].sort((a, b) => a.numberClass - b.numberClass)
         );
         break;
       case "DESC":
         setRenderCourseList(
-          [...renderCourseList].sort(
-            (a, b) =>
-              b.classInfo.filter((item) => {
-                return (
-                  moment(new Date(`${item.endDate}`)) >= moment(new Date())
-                );
-              }).length -
-              a.classInfo.filter((item) => {
-                return (
-                  moment(new Date(`${item.endDate}`)) >= moment(new Date())
-                );
-              }).length
-          )
+          [...renderCourseList].sort((a, b) => b.numberClass - a.numberClass)
         );
         break;
       case "Unsort":
@@ -351,26 +306,18 @@ export default function CourseManagement() {
         setRenderCourseList(
           [...renderCourseList]
             .filter((item) => {
-              return (
-                item.feedbackInfo != null &&
-                item.feedbackInfo != undefined &&
-                item.feedbackInfo.length > 0
-              );
+              return item.averageRating != null;
             })
-            .sort((a, b) => a.rating - b.rating)
+            .sort((a, b) => a.averageRating - b.averageRating)
         );
         break;
       case "DESC":
         setRenderCourseList(
           [...renderCourseList]
             .filter((item) => {
-              return (
-                item.feedbackInfo != null &&
-                item.feedbackInfo != undefined &&
-                item.feedbackInfo.length > 0
-              );
+              return item.averageRating != null;
             })
-            .sort((a, b) => b.rating - a.rating)
+            .sort((a, b) => b.averageRating - a.averageRating)
         );
         break;
       case "Unsort":
@@ -382,33 +329,60 @@ export default function CourseManagement() {
     }
   }, [sortedRating]);
 
+  const navigate = useNavigate();
+
   const handleDeleteCourseByAdmin = (courseid) => {
+    setLoading(true);
     api
-      .put(`/Course/DeleteCourse?courseid=${courseid}`)
+      .put(`/Course/DeleteCourse?courseid=${parseInt(courseid)}`)
       .then((res) => {})
       .catch((err) => {})
       .finally(() => {
-        renderCourseForAdmin();
+        setTimeout(() => {
+          renderCourseForAdmin();
+          setIsDeleted(true);
+          setLoading(false);
+          alert.alertSuccessWithTime(
+            "Delete Successfully",
+            "",
+            2000,
+            "25",
+            () => {}
+          );
+        }, 4000);
       });
   };
 
   const handleReactivateByAdmin = (courseid) => {
+    setLoading(true);
     api
       .put(`/Course/ReactivateCourse?CourseId=${parseInt(courseid)}`)
       .then((res) => {})
       .catch((err) => {})
       .finally(() => {
-        renderCourseForAdmin();
+        setTimeout(() => {
+          renderCourseForAdmin();
+          setIsDeleted(false);
+          setLoading(false);
+          alert.alertSuccessWithTime(
+            "Activate Successfully",
+            "",
+            2000,
+            "25",
+            () => {}
+          );
+        }, 4000);
       });
   };
 
   return (
     <section className="pt-0" style={{ height: "100vh" }}>
+      <LoadingOverlay loading={loading} />
       <HeaderAdmin />
       <section className="main" id="admin-course-management-area">
         <MenuAdmin />
         <div className={`main--content ${!viewData ? "d-none" : ""}`}>
-          <section class="staff-list-area p-0 mt-2 px-4">
+          <section className="staff-list-area p-0 mt-2 px-4">
             <div
               className="flex justify-content-between align-items-end"
               style={{ width: "97%", margin: "0 auto" }}
@@ -717,12 +691,17 @@ export default function CourseManagement() {
                         classInfoFinished,
                         feedbackInfo,
                         rating,
+                        numberClass,
+                        averageRating,
                       },
                       index
                     ) => {
                       let pos = infoMoreList.findIndex((obj) => {
                         return obj == `more-info-id-${courseID}`;
                       });
+                      if (averageRating != null) {
+                        averageRating = parseFloat(averageRating).toFixed(2);
+                      }
                       return (
                         <>
                           <tr key={courseID} className={`row-bg-${index % 2}`}>
@@ -754,77 +733,50 @@ export default function CourseManagement() {
                             <td style={{ textAlign: "right" }}>
                               {formatPrice(price * (1 - discount / 100))}
                             </td>
-                            {renderCount >= 0 &&
-                            classInfo != null &&
-                            classInfo != undefined ? (
-                              <td style={{ textAlign: "right" }}>
-                                {classInfo != null &&
-                                classInfo.filter((item) => {
-                                  return (
-                                    moment(new Date(`${item.endDate}`)) >=
-                                    moment(new Date())
-                                  );
-                                }).length > 0 ? (
-                                  classInfo.filter((item) => {
-                                    return (
-                                      moment(new Date(`${item.endDate}`)) >=
-                                      moment(new Date())
-                                    );
-                                  }).length
-                                ) : (
-                                  <span>Not yet</span>
-                                )}
-                              </td>
-                            ) : (
-                              <td></td>
-                            )}
-                            {renderCount2 >= 0 &&
-                            feedbackInfo != null &&
-                            feedbackInfo != undefined ? (
-                              <td
-                                style={{ textAlign: "center" }}
-                                className={`
+                            <td style={{ textAlign: "right" }}>
+                              {numberClass}
+                            </td>
+                            <td
+                              style={{ textAlign: "center" }}
+                              className={`
                               ${
-                                feedbackInfo.length > 0 && rating >= 4
+                                averageRating != null && averageRating >= 4
                                   ? "text-success"
                                   : ""
                               }
                                 ${
-                                  feedbackInfo.length > 0 &&
-                                  rating >= 3 &&
-                                  rating < 4
+                                  averageRating != null &&
+                                  averageRating >= 3 &&
+                                  averageRating < 4
                                     ? "text-primary"
                                     : ""
                                 }
                                 ${
-                                  feedbackInfo.length > 0 && rating < 3
+                                  averageRating != null && averageRating < 3
                                     ? "text-danger"
                                     : ""
                                 }
                               `}
-                              >
-                                {feedbackInfo.length > 0 ? (
-                                  <>
-                                    <p className="p-0 m-0 text-center">
-                                      {rating}
-                                    </p>
-                                    <p className="p-0 m-0 text-center">
-                                      <Rating
-                                        name="half-rating-read"
-                                        defaultValue={rating}
-                                        precision={0.5}
-                                        readOnly
-                                        style={{ fontSize: "15px" }}
-                                      />
-                                    </p>
-                                  </>
-                                ) : (
-                                  "Not yet"
-                                )}
-                              </td>
-                            ) : (
-                              <td></td>
-                            )}
+                            >
+                              {averageRating != null ? (
+                                <>
+                                  <p className="p-0 m-0 text-center">
+                                    {averageRating}
+                                  </p>
+                                  <p className="p-0 m-0 text-center">
+                                    <Rating
+                                      name="half-rating-read"
+                                      defaultValue={averageRating}
+                                      precision={0.5}
+                                      readOnly
+                                      style={{ fontSize: "15px" }}
+                                    />
+                                  </p>
+                                </>
+                              ) : (
+                                "Not yet"
+                              )}
+                            </td>
                             <td style={{ textAlign: "center" }}>
                               {pos >= 0 ? (
                                 <button
@@ -889,13 +841,6 @@ export default function CourseManagement() {
                                         result.isDismissed === true
                                       ) {
                                       } else if (result.isConfirmed === true) {
-                                        alert.alertSuccessWithTime(
-                                          "Activate Successfully",
-                                          "",
-                                          2000,
-                                          "25",
-                                          () => {}
-                                        );
                                         handleReactivateByAdmin(`${courseID}`);
                                       }
                                     });
@@ -917,8 +862,8 @@ export default function CourseManagement() {
                                       classInfo != null &&
                                       classInfo.filter((item) => {
                                         return (
-                                          moment(new Date(`${item.endDate}`)) >=
-                                          moment(new Date())
+                                          new Date(`${item.endDate}`) >=
+                                          new Date()
                                         );
                                       }).length > 0
                                     ) {
@@ -949,13 +894,6 @@ export default function CourseManagement() {
                                         } else if (
                                           result.isConfirmed === true
                                         ) {
-                                          alert.alertSuccessWithTime(
-                                            "Delete Successfully",
-                                            "",
-                                            2000,
-                                            "25",
-                                            () => {}
-                                          );
                                           handleDeleteCourseByAdmin(
                                             `${courseID}`
                                           );

@@ -1,5 +1,5 @@
-import React from 'react';
-import './LoadingOverlay.scss';
+import React from "react";
+import "./LoadingOverlay.scss";
 
 const LoadingOverlay = ({ loading }) => {
   if (!loading) return null;
@@ -8,7 +8,7 @@ const LoadingOverlay = ({ loading }) => {
     <div className="loading-overlay">
       <div className="loading-content">
         <div className="loader" />
-        <span>Loading...</span>
+        <span>Please wait...</span>
       </div>
     </div>
   );

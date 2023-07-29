@@ -6,7 +6,7 @@ import MenuStaff from "../../../component/Staff/MenuStaff";
 import HeaderStaff from "../../../component/Staff/HeaderStaff";
 import { Rating } from "@mui/material";
 import moment from "moment/moment";
-
+import LoadingOverlay from "../../../component/Loading/LoadingOverlay";
 export default function CourseView() {
   localStorage.setItem("MENU_ACTIVE", "/staff/course");
   const [courseList, setCourseList] = useState([]);
@@ -21,9 +21,8 @@ export default function CourseView() {
   const [sortedClasses, setSortedClasses] = useState("Unsort");
   const [sortedRating, setSortedRating] = useState("Unsort");
   const [priority, setPriority] = useState("");
-  const [renderCount, setRenderCount] = useState(0);
-  const [renderCount2, setRenderCount2] = useState(0);
   const [viewData, setViewData] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const formatPrice = (price) => {
     return Intl.NumberFormat("vi-VN", {
@@ -58,12 +57,15 @@ export default function CourseView() {
     api
       .get("/Course/GetAllCourseForAdmin")
       .then((res) => {
-        courseListEnd = res.data.sort((a, b) => a.courseID - b.courseID);
-        let countNum = 0;
+        courseListEnd = res.data
+          .filter((item) => !item.deleted)
+          .sort((a, b) => a.courseID - b.courseID);
+        setRenderCourseList(courseListEnd);
+        setCourseList(courseListEnd);
+        setLoading(false);
         courseListEnd.forEach(async (course) => {
-          countNum++;
-          await api
-            .get("/Class/GetClassByCourseIDForAdmin", {
+          api
+            .get("/Class/GetUnfinisedClassByCourseIDForAdmin", {
               params: { courseid: course.courseID },
             })
             .then((res) => {
@@ -93,15 +95,8 @@ export default function CourseView() {
               course.classInfoFinished = [];
             })
             .finally(() => {});
-          if (countNum == courseListEnd.length) {
-            setRenderCount((pre) => pre + 1);
-          }
         });
-
-        let countNum2 = 0;
         courseListEnd.forEach(async (course) => {
-          countNum2++;
-
           await api
             .get("/Feedback/GetCourseFeedbackbyIdForStaff", {
               params: { courseid: course.courseID },
@@ -127,10 +122,6 @@ export default function CourseView() {
               course.rating = 0;
             })
             .finally(() => {});
-
-          if (countNum2 == courseListEnd.length) {
-            setRenderCount2((pre) => pre + 1);
-          }
         });
       })
       .catch((err) => {})
@@ -142,19 +133,7 @@ export default function CourseView() {
 
   useEffect(() => {
     renderCourseForAdmin();
-    let timerInterval;
-    Swal.fire({
-      title: "Loading...",
-      timer: 1500,
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
-      willClose: () => {
-        clearInterval(timerInterval);
-        setViewData(true);
-      },
-    });
+    setViewData(true);
   }, []);
 
   const resetSort = () => {
@@ -299,16 +278,12 @@ export default function CourseView() {
     switch (sortedClasses) {
       case "ASC":
         setRenderCourseList(
-          [...renderCourseList].sort(
-            (a, b) => a.classInfo.length - b.classInfo.length
-          )
+          [...renderCourseList].sort((a, b) => a.numberClass - b.numberClass)
         );
         break;
       case "DESC":
         setRenderCourseList(
-          [...renderCourseList].sort(
-            (a, b) => b.classInfo.length - a.classInfo.length
-          )
+          [...renderCourseList].sort((a, b) => b.numberClass - a.numberClass)
         );
         break;
       case "Unsort":
@@ -326,26 +301,18 @@ export default function CourseView() {
         setRenderCourseList(
           [...renderCourseList]
             .filter((item) => {
-              return (
-                item.feedbackInfo != null &&
-                item.feedbackInfo != undefined &&
-                item.feedbackInfo.length > 0
-              );
+              return item.averageRating != null;
             })
-            .sort((a, b) => a.rating - b.rating)
+            .sort((a, b) => a.averageRating - b.averageRating)
         );
         break;
       case "DESC":
         setRenderCourseList(
           [...renderCourseList]
             .filter((item) => {
-              return (
-                item.feedbackInfo != null &&
-                item.feedbackInfo != undefined &&
-                item.feedbackInfo.length > 0
-              );
+              return item.averageRating != null;
             })
-            .sort((a, b) => b.rating - a.rating)
+            .sort((a, b) => b.averageRating - a.averageRating)
         );
         break;
       case "Unsort":
@@ -359,6 +326,7 @@ export default function CourseView() {
 
   return (
     <>
+      <LoadingOverlay loading={loading} />
       <HeaderStaff />
       <section className="main" id="admin-course-management-area">
         <MenuStaff />
@@ -623,12 +591,17 @@ export default function CourseView() {
                         feedbackInfo,
                         deleted,
                         rating,
+                        averageRating,
+                        numberClass,
                       },
                       index
                     ) => {
                       let pos = infoMoreList.findIndex((obj) => {
                         return obj == `more-info-id-${courseID}`;
                       });
+                      if (averageRating != null) {
+                        averageRating = parseFloat(averageRating).toFixed(2);
+                      }
                       return (
                         <>
                           <tr key={courseID} className={`row-bg-${index % 2}`}>
@@ -654,78 +627,50 @@ export default function CourseView() {
                             <td style={{ textAlign: "right" }}>
                               {formatPrice(price * (1 - discount / 100))}
                             </td>
-                            {renderCount > 0 &&
-                            classInfo != null &&
-                            classInfo != undefined ? (
-                              <td style={{ textAlign: "right" }}>
-                                {classInfo != null &&
-                                classInfo.filter((item) => {
-                                  return (
-                                    moment(new Date(`${item.endDate}`)) >=
-                                    moment(new Date())
-                                  );
-                                }).length > 0 ? (
-                                  classInfo.filter((item) => {
-                                    return (
-                                      moment(new Date(`${item.endDate}`)) >=
-                                      moment(new Date())
-                                    );
-                                  }).length
-                                ) : (
-                                  <span>Not yet</span>
-                                )}
-                              </td>
-                            ) : (
-                              <td></td>
-                            )}
-                            {renderCount2 > 0 &&
-                            feedbackInfo != null &&
-                            feedbackInfo != undefined ? (
-                              <td
-                                style={{ textAlign: "center" }}
-                                className={`
+                            <td style={{ textAlign: "right" }}>
+                              {numberClass}
+                            </td>
+                            <td
+                              style={{ textAlign: "center" }}
+                              className={`
                               ${
-                                feedbackInfo.length > 0 && rating >= 4
+                                averageRating != null && averageRating >= 4
                                   ? "text-success"
                                   : ""
                               }
                                 ${
-                                  feedbackInfo.length > 0 &&
-                                  rating >= 3 &&
-                                  rating < 4
+                                  averageRating != null &&
+                                  averageRating >= 3 &&
+                                  averageRating < 4
                                     ? "text-primary"
                                     : ""
                                 }
                                 ${
-                                  feedbackInfo.length > 0 && rating < 3
+                                  averageRating != null && averageRating < 3
                                     ? "text-danger"
                                     : ""
                                 }
                               `}
-                              >
-                                {feedbackInfo.length > 0 ? (
-                                  <>
-                                    <p className="p-0 m-0 text-center">
-                                      {rating}
-                                    </p>
-                                    <p className="p-0 m-0 text-center">
-                                      {" "}
-                                      <Rating
-                                        name="half-rating-read"
-                                        defaultValue={rating}
-                                        precision={0.5}
-                                        readOnly
-                                        style={{ fontSize: "15px" }}
-                                      />
-                                    </p>
-                                  </>
-                                ) : (
-                                  "Not yet"
-                                )}
-                              </td>
-                            ) : (
-                              <td></td>
-                            )}
+                            >
+                              {averageRating != null ? (
+                                <>
+                                  <p className="p-0 m-0 text-center">
+                                    {averageRating}
+                                  </p>
+                                  <p className="p-0 m-0 text-center">
+                                    <Rating
+                                      name="half-rating-read"
+                                      defaultValue={averageRating}
+                                      precision={0.5}
+                                      readOnly
+                                      style={{ fontSize: "15px" }}
+                                    />
+                                  </p>
+                                </>
+                              ) : (
+                                "Not yet"
+                              )}
+                            </td>
                             <td style={{ textAlign: "center" }}>
                               {pos >= 0 ? (
                                 <button

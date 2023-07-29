@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import HeaderHome from "../../../component/HeaderHome/HeaderHome";
 import axios from "axios";
-import image from "../../../assets/images/img-demo.jpg";
 import { NavLink } from "react-router-dom";
 import "./CourseDetail.scss";
 import { Button } from "react-bootstrap";
@@ -11,10 +10,10 @@ import CourseFeedback from "./CourseFeedback/CourseFeedback";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { api } from "../../../constants/api";
 import FooterHome from "../../../component/FooterHome/FooterHome";
-import Swal from "sweetalert2";
 import { alert } from "../../../component/AlertComponent/Alert";
 import Aos from "aos";
 import LoadingOverlay from "../../../component/Loading/LoadingOverlay";
+
 export default function CourseDetail() {
   localStorage.setItem("MENU_ACTIVE", "/course");
 
@@ -23,82 +22,96 @@ export default function CourseDetail() {
   const [courseClasses, setCourseClasses] = useState([]);
   const [courseFeedback, setCourseFeedback] = useState([]);
   const [availablePayment, setAvailablePayment] = useState(false);
+  const [linkPayment, setLinkPayment] = useState("");
   const [userLogin, setUserLogin] = useState({});
+  const [viewData, setViewData] = useState(false);
+  const [viewClassFirst, setViewClassFirst] = useState(false);
   const [loading, setLoading] = useState(true);
-
   const formatPrice = (price) => {
     return Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
     }).format(price);
   };
-  
-
+  let arr = [];
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const courseResponse = await api.get("/Course/GetCourseByID", {
-          params: { id: param.id },
-        });
-        console.log(courseResponse.data);
-        setCourseDetail(courseResponse.data);
-        try {
-          const feedbackResponse = await api.get("/Feedback/GetCourseFeedbackbyId", {
-            params: { courseid: param.id },
-          });
-          console.log(feedbackResponse.data);
-          setCourseFeedback(feedbackResponse.data);
-
-          try {
-
-            const classResponse = await api.get("/Class/GetClassByCourseID", {
-              params: { courseid: param.id },
-
-            }
-            )
-            console.log(classResponse.data);
-            setCourseClasses(classResponse.data); 
-            setLoading(false);
-          } catch (err) {
-
-          }
-
-        } catch (err) {
-          console.error(err);
-        }
-
-
-
-
-        const USER_LOGIN = localStorage.getItem("USER_LOGIN");
-        let USER = {};
-        if (USER_LOGIN != null) {
-          USER = JSON.parse(USER_LOGIN);
-          setUserLogin(USER);
+    window.scrollTo(0, 0);
+    api
+      .get("/Course/GetCourseByID", {
+        params: { id: param.id },
+      })
+      .then((res) => {
+        setCourseDetail(res.data.course);
+        setCourseClasses(res.data.listClass);
+        setCourseFeedback(res.data.listFeedback);
+        arr = res.data.listClass;
+        setLoading(false);
+      })
+      .catch((err) => {})
+      .finally(() => {
+        setViewData(true);
+        setTimeout(() => {
+          setLoading(false);
+        }, 150);
+        if (
+          localStorage.getItem("NOTIFICATION_CHOOSE_CLASS") == "true" &&
+          arr.length > 0
+        ) {
+          setViewClassFirst(true);
           if (
-            USER.accountID != null &&
-            USER.role != null &&
-            USER.role.id === 4
+            localStorage.getItem("NOTIFICATION_CHOOSE_CLASS_NONE") == "true"
           ) {
-            setAvailablePayment(true);
-            // Uncomment and modify the following lines if needed
-            // const paymentResponse = await api.post(`/CheckOutVNPAY`, {
-            //   amount: parseInt(price * (1 - discount / 100)),
-            //   accId: USER.accountID,
-            //   courseId: param.id,
-            // });
-            // setLinkPayment(paymentResponse.data);
+            setTimeout(() => {
+              alert.alertFailedWithTime(
+                "Failed To Pay",
+                "Please try to pay again",
+                3500,
+                "30",
+                () => {}
+              );
+              localStorage.removeItem("NOTIFICATION_CHOOSE_CLASS_NONE");
+            }, 1300);
+          } else {
+            alert.alertInfoNotiForTrainee(
+              "Please choose the class you want to register",
+              "",
+              () => {}
+            );
           }
+          localStorage.removeItem("NOTIFICATION_CHOOSE_CLASS");
         }
-      } catch (err) {
-        console.error(err);
+        if (
+          localStorage.getItem("NOTIFICATION_CHOOSE_CLASS") == "true" &&
+          arr.length == 0
+        ) {
+          alert.alertInfoNotiForTrainee(
+            "We Are Sorry",
+            "This course does not have any classess at the present</br>Please contact with us for more support",
+            () => {}
+          );
+          localStorage.removeItem("NOTIFICATION_CHOOSE_CLASS");
+        }
+      });
+
+    const USER_LOGIN = localStorage.getItem("USER_LOGIN");
+    let USER = {};
+    if (USER_LOGIN != null) {
+      USER = JSON.parse(USER_LOGIN);
+      setUserLogin(USER);
+      if (
+        !(
+          USER.accountID == null ||
+          USER.accountID == undefined ||
+          USER.role == null ||
+          USER.role == undefined ||
+          USER.role.id != 4
+        )
+      ) {
+        setAvailablePayment(true);
       }
+    }
+  }, []);
 
-    };
-    fetchData();
-
-
-  }, [param.id]);
   let {
     courseName,
     levelName,
@@ -111,15 +124,14 @@ export default function CourseDetail() {
 
   return (
     <div>
-          <LoadingOverlay loading={loading}/>
-
+      <LoadingOverlay loading={loading} />
       <div className="header-top m-4 mx-0 mt-0">
         <HeaderHome />
       </div>
       <main className="pt-5">
         <div
-          className="box course-detail-area mt-5 my-5"
-
+          className={`box course-detail-area mt-5 my-5
+         ${viewData ? "" : "d-none"}`}
         >
           <div className="course-detail-info w-100 form-container flex-column justify-content-start align-items-start p-3">
             <div className="row justify-content-center">
@@ -134,10 +146,24 @@ export default function CourseDetail() {
                 </NavLink>
               </div>{" "}
             </div>
-
+            {viewClassFirst ? (
+              <>
+                <h2 className="course-detail-title course-detail-name m-4 mt-0 pt-3">
+                  Available Classes
+                </h2>
+                <CourseClasses
+                  courseClasses={courseClasses}
+                  courseId={param.id}
+                  discount={discount}
+                  price={price}
+                />
+              </>
+            ) : (
+              <></>
+            )}
             <h2
-              className="course-detail-title m-4 mt-0
-              "
+              className={`course-detail-title m-4 mt-0
+             ${!viewClassFirst ? " course-detail-name " : "pt-3"}`}
             >
               {courseName}
             </h2>
@@ -188,19 +214,21 @@ export default function CourseDetail() {
               </div>
             </div>
 
-
-            <>
-              <h2 className="sub-title course-detail-title mt-4">
-                Available Classes
-              </h2>
-              <CourseClasses
-                courseClasses={courseClasses}
-                courseId={param.id}
-                discount={discount}
-                price={price}
-              />
-            </>
-
+            {!viewClassFirst ? (
+              <>
+                <h2 className="sub-title course-detail-title mt-4">
+                  Available Classes
+                </h2>
+                <CourseClasses
+                  courseClasses={courseClasses}
+                  courseId={param.id}
+                  discount={discount}
+                  price={price}
+                />
+              </>
+            ) : (
+              <></>
+            )}
             <h2 className="sub-title course-detail-title mt-4">
               Rating &amp; Feedbacks
             </h2>

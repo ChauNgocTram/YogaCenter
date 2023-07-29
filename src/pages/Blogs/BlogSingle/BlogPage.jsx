@@ -2,51 +2,33 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import "remixicon/fonts/remixicon.css";
 import HeaderHome from "../../../component/HeaderHome/HeaderHome";
-import user from "../../../assets/images/user.jpg";
-
 import "./BlogPage.scss";
 import { NavLink } from "react-router-dom";
 import { api } from "../../../constants/api";
 import FooterHome from "../../../component/FooterHome/FooterHome";
-
+import LoadingOverlay from "../../../component/Loading/LoadingOverlay";
+import moment from "moment/moment";
 export default function BlogPage() {
   localStorage.setItem("MENU_ACTIVE", "/blog");
   const param = useParams();
   const [blogDetail, setBlogDetail] = useState(null);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let timerInterval;
-    Swal.fire({
-      title: "Loading...",
-      timer: 800,
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
-      willClose: () => {
-        clearInterval(timerInterval);
-      },
-    });
     api
       .get("/Blog/GetBlogById", {
         params: { id: param.id },
       })
       .then((res) => {
         setBlogDetail(res.data);
-        setIsDataLoaded(true);
+        setLoading(false);
       })
       .catch((err) => {});
   }, [param.id]);
 
-  useEffect(() => {
-    if (isDataLoaded) {
-      Swal.close();
-    }
-  }, [isDataLoaded]);
-
   if (blogDetail === null) {
-    return null;
+    return <LoadingOverlay loading={loading} />;
   }
 
   let {
@@ -61,32 +43,61 @@ export default function BlogPage() {
   } = blogDetail;
 
   const formatDate = (dateString) => {
-    const dateObj = new Date(dateString);
-
-    const day = dateObj.getDate();
-    const month = dateObj.getMonth() + 1;
-    const year = dateObj.getFullYear();
-
-    return `${day}-${month}-${year}`;
+    return moment(dateString).format("DD - MM - YYYY");
   };
 
   const formattedDate = formatDate(date);
 
-  const previousBlogID = blogID - 1;
-  const nextBlogID = blogID + 1;
+  const formatContentWithBoldPhrases = (content) => {
+    return content.split("\n").map((paragraph, index) => {
+      const colonIndex = paragraph.indexOf(":");
+      if (colonIndex !== -1) {
+        const boldPart = paragraph.slice(0, colonIndex + 1); // Get the part before colon, including the colon itself
+        const normalPart = paragraph.slice(colonIndex + 1); // Get the part after colon
+        return (
+          <React.Fragment key={index}>
+            <strong style={{ fontSize: "20px" }}>{boldPart}</strong>
+            {normalPart}
+            <br />
+          </React.Fragment>
+        );
+      } else {
+        return (
+          <React.Fragment key={index}>
+            {paragraph}
+            <br />
+          </React.Fragment>
+        );
+      }
+    });
+  };
+
+  const formattedContent = formatContentWithBoldPhrases(content);
 
   return (
     <div>
+      <LoadingOverlay loading={loading} />
       <div className="header-top m-4 mx-0 mt-0">
         <HeaderHome />
       </div>
       <main className="pt-5">
         <div className={`box course-detail-area mt-5 my-5 px-5 pt-4`}>
           <div className="course-detail-info w-100 form-container flex-column justify-content-start align-items-start p-3">
-            <div className="close px-0 mx-0">
-              <NavLink to={"/blog"}>
-                <a href="">Close</a>
-                <i className="fa-solid fa-circle-xmark"></i>
+            <div
+              className="close px-0 mx-0"
+              style={{ textAlign: "right", margin: "10px 50px" }}
+            >
+              <NavLink
+                to={"/blog"}
+                style={{
+                  textDecoration: "none",
+                  marginRight: "10px",
+                  color: "#000",
+                  fontWeight: "bolder",
+                }}
+              >
+                Close
+                <i className="fa-solid fa-circle-xmark ps-2"></i>
               </NavLink>
             </div>
 
@@ -96,26 +107,25 @@ export default function BlogPage() {
 
             <div className="user mb-3">
               <a className="avatar " href="">
-                <img src={user} alt="" />
+                <img
+                  src="https://firebasestorage.googleapis.com/v0/b/yogacenter-66b48.appspot.com/o/userImages%2Fdefault--avt--male.jpg?alt=media&token=b62e9e4f-0e8e-43f9-ae9d-fba29d67d112"
+                  alt="avatar"
+                  style={{ border: "3px solid gray" }}
+                />
               </a>
 
-              <div className="info">
-                <p>
-                  {firstName} {lastName}
-                </p>
-                <p className="time"> {formattedDate}</p>
+              <div className="info" style={{ color: "#d08fba" }}>
+                <h3 style={{ margin: "0" }}>
+                  <b>
+                    {firstName} {lastName}
+                  </b>
+                </h3>
+                <p className="time">{formattedDate}</p>
               </div>
             </div>
 
             <div className="content blog-content">
-              <p>
-                {content.split("\r\n").map((paragraph, index) => (
-                  <React.Fragment key={index}>
-                    {paragraph}
-                    <br />
-                  </React.Fragment>
-                ))}
-              </p>
+              <p>{formattedContent}</p>
 
               <p className="">
                 <img src={img} alt="" style={{ borderRadius: "25px" }} />

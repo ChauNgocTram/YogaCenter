@@ -740,7 +740,10 @@ export default function StaffClassCreate() {
                       </thead>
                       <tbody>
                         {listOfTimeFrame.map((timeFrame) => (
-                          <tr key={timeFrame.id}>
+                          <tr
+                            key={timeFrame.id}
+                            style={{ borderBottom: "1px solid #000" }}
+                          >
                             <td className="align-middle">
                               {timeFrame.timeFrame1}
                             </td>
@@ -1172,23 +1175,7 @@ export default function StaffClassCreate() {
                         ]}
                         hasFeedback
                       >
-                        {/* <Select
-                          name="trainerId"
-                          width="200px"
-                          placeholder="Select Trainer"
-                          value={formik.values.trainerId}
-                          onChange={handleChangeTrainer}
-                        >
-                          {listOfTrainer.map((item, index) => {
-                            return (
-                              <Select.Option key={index} value={item.accountID}>
-                                {item.fullname}
-                              </Select.Option>
-                            );
-                          })}
-                        </Select> */}
                         <AutoComplete
-                          // style={{ width: 200 }}
                           name="trainerId"
                           options={options}
                           onSelect={(value) => {
@@ -1238,7 +1225,10 @@ export default function StaffClassCreate() {
                     </thead>
                     <tbody>
                       {listOfTimeFrame.map((timeFrame) => (
-                        <tr key={timeFrame.id}>
+                        <tr
+                          key={timeFrame.id}
+                          style={{ borderBottom: "1px solid #000" }}
+                        >
                           <td className="align-middle">
                             {timeFrame.timeFrame1}
                           </td>
@@ -1336,7 +1326,7 @@ export default function StaffClassCreate() {
                                         className="p-0 m-0"
                                         style={{ fontWeight: "bolder" }}
                                       >
-                                        {filteredItem.courseName}
+                                        <b>{filteredItem.courseName}</b>
                                       </p>
                                       {/* </Link> */}
 

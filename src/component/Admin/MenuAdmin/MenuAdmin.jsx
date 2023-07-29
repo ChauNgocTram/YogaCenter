@@ -105,15 +105,7 @@ export default function MenuAdmin() {
           </NavLink>
         </li>
       </ul>
-      <ul className="sidebar--bottom-items">
-        {/* <li>
-          <NavLink to="/">
-            <span className="icon icon-4">
-              <i className="fa-solid fa-house" style={{ color: "#ec88ad" }}></i>{" "}
-            </span>
-            <span className="sidebar--item">Home</span>
-          </NavLink>
-        </li> */}
+      {/* <ul className="sidebar--bottom-items">
         <li>
           <NavLink to={`/profile`}>
             <span className="icon icon-7">
@@ -140,7 +132,7 @@ export default function MenuAdmin() {
             <span className="sidebar--item">Log out</span>
           </NavLink>
         </li>
-      </ul>
+      </ul> */}
     </div>
   );
 }

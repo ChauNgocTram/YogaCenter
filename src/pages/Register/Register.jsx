@@ -66,9 +66,7 @@ export default function Register() {
   const handleGoogleSignIn = async () => {
     try {
       await googleSignIn();
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   };
 
   const formItemLayout = {
@@ -273,8 +271,9 @@ export default function Register() {
       img: "",
     },
 
-    onSubmit: async (values) => {
+    onSubmit: (values) => {
       if (registerByEmail) {
+        values.email = emailRegisterByEmail;
         handleRegister(values);
       } else {
         handleVerifyEmail(values);
@@ -304,24 +303,25 @@ export default function Register() {
               () => {}
             );
           } else {
-            // let fullname = user.displayName.split(" ");
-            // let firstname = fullname[0];
-            // let lastname = "";
-            // for (let i = 1; i < fullname.length; i++) {
-            //   lastname += fullname[i];
-            // }
-            // document.querySelector("input#email").value = user.email;
-            // formik.setFieldValue("firstname", firstname);
-            // formik.setFieldValue("lastname", lastname);
-            // if (user.phoneNumber != null && user.phoneNumber != undefined) {
-            //   formik.setFieldValue("phoneNumber", user.phoneNumber);
-            // }
+            let fullname = user.displayName.split(" ");
+            let firstname = fullname[0];
+            let lastname = "";
+            for (let i = 1; i < fullname.length; i++) {
+              lastname += fullname[i];
+            }
+            formik.setFieldValue("firstname", firstname);
+            formik.setFieldValue("lastname", lastname);
             formik.setFieldValue("email", user.email);
+            form.setFieldsValue({
+              firstname: firstname,
+              lastname: lastname,
+              email: user.email,
+            });
             setRegisterByEmail(true);
             setEmailRegisterByEmail(user.email);
             alert.alertSuccessWithTime(
               "Verify Email Successfully",
-              "Please complete other informatio to finish your registration",
+              "Please complete other information to finish your registration",
               6000,
               "38",
               () => {}
@@ -519,14 +519,13 @@ export default function Register() {
                             message: "Email is not in correct form",
                           },
                         ]}
-                        style={
-                          {
-                            // display: `${registerByEmail ? "none" : ""}`,
-                          }
-                        }
+                        style={{
+                          display: `${registerByEmail ? "none" : ""}`,
+                        }}
                         hasFeedback
                       >
                         <Input
+                          id="input_email"
                           name="email"
                           value={formik.values.email}
                           onChange={formik.handleChange}
@@ -534,7 +533,7 @@ export default function Register() {
                         />
                       </Form.Item>
                       <p
-                        className="p-0 m-0 col-sm-12 col-md-7 mb-4"
+                        className="ps-1 p-0 m-0 col-sm-12 col-md-7 mb-4"
                         style={{
                           display: `${!registerByEmail ? "none" : ""}`,
                           transform: "translateY(5px)",
@@ -604,7 +603,7 @@ export default function Register() {
                         rules={[
                           {
                             required: true,
-                            message: "Confirm Password cannot be blank",
+                            message: "Confirm Password is required",
                           },
                           ({ getFieldValue }) => ({
                             validator(_, value) {
@@ -614,9 +613,7 @@ export default function Register() {
                               ) {
                                 return Promise.resolve();
                               }
-                              return Promise.reject(
-                                "Confirm Password does not match"
-                              );
+                              return Promise.reject("Confirm does not match");
                             },
                           }),
                         ]}
@@ -703,11 +700,6 @@ export default function Register() {
                           font-semibold font-display focus:outline-none focus:shadow-outline hover:bg-green-600
                           shadow-lg"
                         type="submit"
-                        onClick={() => {
-                          if (registerByEmail) {
-                            formik.handleSubmit();
-                          }
-                        }}
                       >
                         Register
                       </button>

@@ -9,6 +9,7 @@ import "./AdminSetting.scss";
 import moment from "moment/moment";
 import { alert } from "../../../component/AlertComponent/Alert";
 import Swal from "sweetalert2";
+import { menuAction } from "../../../component/Admin/MenuAdmin/MenuAction";
 
 export default function AdminSetting() {
   localStorage.setItem("MENU_ACTIVE", "/admin/setting");
@@ -35,6 +36,7 @@ export default function AdminSetting() {
       setId(1);
       setNavigation(1);
     }, 1000);
+    menuAction.menuActive();
   }, []);
 
   useEffect(() => {

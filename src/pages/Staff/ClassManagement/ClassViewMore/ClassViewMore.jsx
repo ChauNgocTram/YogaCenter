@@ -335,9 +335,6 @@ export default function ClassViewMore({
         [...courseClasses].filter(
           (item) => new Date(item.endDate) - new Date() < 0
         ).length > 0 ? (
-          // [...courseClasses, ...courseFinishedClasses].length > 0 &&
-          // [...courseClasses, ...courseFinishedClasses].length >
-          //   [...courseFinishedClasses].length
           <div className="text-end">
             <button
               className="border-0 mt-2 mx-1

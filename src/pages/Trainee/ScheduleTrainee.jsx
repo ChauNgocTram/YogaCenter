@@ -9,12 +9,14 @@ import moment from "moment/moment";
 import { Rating } from "@mui/material";
 import { alert } from "../../component/AlertComponent/Alert";
 import Aos from "aos";
+import LoadingOverlay from "../../component/Loading/LoadingOverlay";
 
 export default function ScheduleTrainee() {
   localStorage.setItem("MENU_ACTIVE", "/trainee/schedule");
+  const [loading, setLoading] = useState(true);
   const [schedule, setSchedule] = useState([]);
   const [timeFrames, setTimeFrames] = useState([]);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
   const [listOfFinishedClasses, setListOfFinishedClasses] = useState([]);
   const [responsive, setResponsive] = useState(false);
   const [responsiveMobile, setResponsiveMobile] = useState(false);
@@ -61,20 +63,6 @@ export default function ScheduleTrainee() {
   };
 
   useEffect(() => {
-    let timerInterval;
-
-    Swal.fire({
-      title: "Loading...",
-      timer: 1000,
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
-      willClose: () => {
-        clearInterval(timerInterval);
-      },
-    });
-
     for (let i = 0; i <= 5; i++) {
       window.clearInterval(i);
     }
@@ -122,15 +110,12 @@ export default function ScheduleTrainee() {
       .then((res) => {
         setSchedule(res.data);
       })
-      .catch((err) => {});
+      .catch((err) => {})
+      .finally(() => {
+        setLoading(false);
+      });
     renderFeedbacks();
   }, []);
-
-  useEffect(() => {
-    if (isDataLoaded) {
-      Swal.close();
-    }
-  }, [isDataLoaded]);
 
   useEffect(() => {
     let schedule_table_area = document.querySelector("div#schedule-table-area");
@@ -302,13 +287,11 @@ export default function ScheduleTrainee() {
 
   return (
     <>
+      <LoadingOverlay loading={loading} />
       <div className="header-top m-4 mx-0 mt-0">
         <HeaderHome />
       </div>
       <div className="main--content bg-white">
-        {/* <div className="timetable-img text-center">
-        <img src="img/content/timetable.png" alt />
-      </div> */}
         <section className="trainer-area pt-3 pb-3">
           <div
             className={`row flex trainer mt-2 mb-4 

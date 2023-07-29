@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, NavLink } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 import { api } from "../../constants/api";
 import Swal from "sweetalert2";
-import { Formik, useFormik } from "formik";
+import { useFormik } from "formik";
 import { Form, Input, Button } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import female from "../../assets/images/avt-female.jpg";
@@ -15,6 +15,7 @@ import { ref, uploadBytes, listAll, getDownloadURL } from "firebase/storage";
 import { storage } from "../../constants/firebase";
 import { stringify, v4 } from "uuid";
 import Aos from "aos";
+import LoadingOverlay from "../../component/Loading/LoadingOverlay";
 export default function UpdateProfile() {
   const navigate = useNavigate();
   const [imageUpload, setImageUpload] = useState(null);
@@ -24,6 +25,7 @@ export default function UpdateProfile() {
     wrapperCol: { xs: { span: 10 }, sm: { span: 8 } },
   };
   // const { id } = useParams();
+  const [loading, setLoading] = useState(true);
   const id = JSON.parse(localStorage.getItem("USER_LOGIN")).accountID;
   const [accept, setAccept] = useState(false);
   const [profile, setProfile] = useState(null);
@@ -52,6 +54,7 @@ export default function UpdateProfile() {
       USER.accountID.toString().trim() == id.toString().trim()
     ) {
       setAccept(true);
+      setLoading(false);
     } else {
       navigate("/");
     }
@@ -243,6 +246,7 @@ export default function UpdateProfile() {
   };
   return (
     <>
+      <LoadingOverlay loading={loading} />
       {accept ? (
         <div
           className={`update-profile-area w-100

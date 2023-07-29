@@ -109,11 +109,7 @@ export default function CourseDetail({
         )}
 
         <div className="button text-center pt-1">
-          <Button
-            // to={`/courseDetail/${courseID}`}
-            className="course-view-detail mx-1 mt-1"
-            variant=""
-          >
+          <Button className="course-view-detail mx-1 mt-1" variant="">
             <NavLink
               style={{ textDecoration: "none", color: "white" }}
               to={`/courseDetail/${courseID}`}
@@ -129,7 +125,6 @@ export default function CourseDetail({
               onClick={() => {
                 localStorage.setItem("NOTIFICATION_CHOOSE_CLASS", "true");
               }}
-              // target="blank"
             >
               Register Now
             </Button>

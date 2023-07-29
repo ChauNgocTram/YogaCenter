@@ -12,6 +12,7 @@ import { ref, uploadBytes, listAll, getDownloadURL } from "firebase/storage";
 import { storage } from "../../../../constants/firebase";
 import { v4 } from "uuid";
 import "./EditCourse.scss";
+import LoadingOverlay from "../../../../component/Loading/LoadingOverlay";
 
 export default function AdminCourseEdit() {
   const param = useParams();
@@ -22,6 +23,7 @@ export default function AdminCourseEdit() {
   const [previewDiscount, setPreviewDiscount] = useState(-1);
   const [levelList, setLevelList] = useState([]);
   const [imageUpload, setImageUpload] = useState(null);
+  const [loading, setLoading] = useState(true);
   const formatPrice = (price) => {
     return Intl.NumberFormat("vi-VN", {
       // style: "currency",
@@ -133,7 +135,10 @@ export default function AdminCourseEdit() {
         setPreviewPrice(res.data.price);
         setPreviewDiscount(res.data.discount);
       })
-      .catch((err) => {});
+      .catch((err) => {})
+      .finally(() => {
+        setLoading(false);
+      });
 
     api
       .get("/Level/GetAllLevel")
@@ -146,6 +151,7 @@ export default function AdminCourseEdit() {
   const handleSubmitForm = (values) => {};
   return (
     <>
+      <LoadingOverlay loading={loading} />
       <HeaderAdmin />
       <section className="main" id="admin-course-management-area">
         <MenuAdmin />

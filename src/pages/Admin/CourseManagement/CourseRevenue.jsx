@@ -1,26 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useParams } from "react-router-dom";
 import { api } from "../../../constants/api";
+
 import "./CourseRevenue.scss";
 import LoadingOverlay from "../../../component/Loading/LoadingOverlay";
 
 export default function CourseRevenue() {
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
-
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const handleYearSelection = (year) => {
-    // let interval = setInterval(() => {
-    //   var chartExist = Chart.getChart("my-chart");
-    //   if (chartExist != undefined) {
-    //     chartExist.clear();
-    //     chartExist.destroy();
-    //     // delete chart;
-    //   } else {
+    setYearLoading(true);
     setSelectedYear(year);
-
-    //     clearInterval(interval);
-    //   }
-    // }, 5000);
   };
   const MONTHS = [
     "January",
@@ -36,59 +26,43 @@ export default function CourseRevenue() {
     "November",
     "December",
   ];
-  const [courseDetail, setCourseDetail] = useState([]);
+
   const [revenueDetail, setRevenueDetail] = useState({});
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [yearLoading, setYearLoading] = useState(false);
+
   const [available, setAvailable] = useState(false);
   const { id } = useParams();
   const formatPrice = (price) => {
     return Intl.NumberFormat("vi-VN", {
-      // style: "currency",
       currency: "VND",
     }).format(price);
   };
   useEffect(() => {
-    setLoading(true);
-    const fetchData = async () => {
-      try {
-        const getCourseResponse = await api.get("/api/AdminRepositoryAPI/GetCourseRevenue", {
-          params: {
-            courseId: id,
-            year: selectedYear,
-          },
-        });
-        console.log(getCourseResponse.data)
-
-        setRevenueDetail(getCourseResponse.data);
-        setLoading(false);
-        try {
-          const getCourseForAdminResponse = await api.get("/Course/GetCourseForAdminByID", {
-            params: { id: id },
-          });
-          setCourseDetail(getCourseForAdminResponse.data);
-          console.log(getCourseForAdminResponse.data)
+    api
+      .get("/api/AdminRepositoryAPI/GetCourseRevenue", {
+        params: {
+          courseId: id,
+          year: selectedYear,
+        },
+      })
+      .then((res) => {
+        setRevenueDetail(res.data);
         setAvailable(true);
-
-        } catch (err) {
-          console.error(err);
-        }
-      } catch (err) {
+        setLoading(false);
+        setYearLoading(false);
+      })
+      .catch((err) => {
         console.error(err);
-      }
-
-     
-    };
-
-    fetchData();
+        setAvailable(false);
+        setLoading(false);
+        setYearLoading(false);
+      });
   }, [id, selectedYear]);
-
-  
 
   return (
     <>
-    <LoadingOverlay loading={loading}/>
-
-      {available ? (
+      <LoadingOverlay loading={loading || yearLoading} />
+      {available && (
         <div className="main--content bg-white revenue-area">
           <section
             className="trainer-area pt-3 pb-3"
@@ -111,8 +85,7 @@ export default function CourseRevenue() {
                       </div>
                       <div className="col-md-4 col-sm-12 text-center mt-5">
                         <img
-                          src={courseDetail.courseImg}
-                          alt={courseDetail.courseName}
+                          src={revenueDetail.course.courseImg}
                           className="header-avatar"
                         />
                       </div>
@@ -121,22 +94,24 @@ export default function CourseRevenue() {
                           className="header-fullname"
                           style={{ fontSize: "24px", fontWeight: "bold" }}
                         >
-                          Course: {courseDetail.courseName}
+                          Course: {revenueDetail.course.courseName}
                         </div>
 
                         <div
                           className="header-information"
                           style={{ fontSize: "20px" }}
                         >
-                          <p>Price: {formatPrice(courseDetail.price)}</p>
-                          <p>Level: {courseDetail.levelName}</p>
+                          <p>
+                            Price: {formatPrice(revenueDetail.course.price)} VNĐ
+                          </p>
+                          <p>Level: {revenueDetail.course.levelName}</p>
                         </div>
                       </div>
                       <div className="col-md-12 col-sm-12 col-xs-12 profile-stats">
                         <div className="row">
                           <div className="col-md-4 col-sm-4 col-xs-12 stats-col">
                             <div className="stats-value pink">
-                              {formatPrice(revenueDetail.annualRevenue)}
+                              {formatPrice(revenueDetail.annualRevenue)} VNĐ
                             </div>
                             <div className="stats-title">Annual Revenue</div>
                           </div>
@@ -282,10 +257,6 @@ export default function CourseRevenue() {
             </div>
           </section>
         </div>
-      ) : (
-        <>
-          <h1 className="mt-5 ms-5 text-center">Not yet</h1>
-        </>
       )}
     </>
   );
